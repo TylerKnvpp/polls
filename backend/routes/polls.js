@@ -28,45 +28,71 @@ router.route("/new").post((req, res) => {
 
 router.route("/:id").get((req, res) => {
   let id = req.params.id;
+  let ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+
   Poll.findById(id, (err, poll) => {
-    if (poll) res.json(poll);
+    if (poll) res.json({ poll: poll, ip: ip });
     else
-      res.status(400).send({ message: "Poll could not be found.", error: err });
+      res.status(400).send({
+        message: "Poll could not be found.",
+        error: err
+      });
   });
 });
 
 router.route("/:id/vote").post(function(req, res) {
   Poll.findById(req.params.id, function(err, poll) {
-    // let ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
     let voterInfo = req.body.voterInfo;
     if (!poll) res.status(400).send({ message: err });
     else {
       let votersChoice = poll.pollChoices.find(
         poll => poll.choiceText === req.body.choiceText
       );
-      votersChoice.choiceVotes.push(voterInfo);
 
-      poll
-        .save()
-        .then(poll => {
-          res
-            .status(200)
-            .json({ message: "Vote added succesfully!", vote: votersChoice });
-        })
-        .catch(err =>
-          res
-            .status(400)
-            .json({ message: "Vote could not be added.", message: err })
-        );
+      let validation = true;
+
+      if (!voterInfo.voterName) {
+        res.status(400).send({ message: "First Name is required." });
+        validation = false;
+      }
+
+      if (!voterInfo.voterLocation) {
+        res.status(400).send({ message: "Location is required." });
+        validation = false;
+      }
+
+      if (!voterInfo.voterPoliticalParty) {
+        res.status(400).send({ message: "Political Affiliation is required." });
+        validation = false;
+      }
+
+      if (!voterInfo.voterAge) {
+        res.status(400).send({ message: "Age is required." });
+        validation = false;
+      }
+
+      if (!voterInfo.incomeBracket) {
+        res.status(400).send({ message: "Income Bracket is required." });
+        validation = false;
+      }
+
+      if (validation) {
+        votersChoice.choiceVotes.push(voterInfo);
+
+        poll
+          .save()
+          .then(poll => {
+            res
+              .status(200)
+              .json({ message: "Vote added succesfully!", vote: votersChoice });
+          })
+          .catch(err =>
+            res
+              .status(400)
+              .json({ message: "Vote could not be added.", message: err })
+          );
+      }
     }
-    //     todo
-    //       .save()
-    //       .then(todo => {
-    //         res.json("Task Updated!");
-    //       })
-    //       .catch(err => {
-    //         res.status(400).send("Cannot update task");
-    //       });
   });
 });
 

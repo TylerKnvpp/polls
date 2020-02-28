@@ -23,7 +23,7 @@ connection.once("open", () => {
 });
 
 connection.on("error", function(err) {
-  logger.error("MongoDB event error: " + err);
+  console.log("Mongoose default connection error: " + err);
 });
 
 connection.catch();

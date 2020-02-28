@@ -1,11 +1,11 @@
 var mongoose = require("mongoose");
 
 var voteSchema = new mongoose.Schema({
-  voterName: { type: String, required: true },
+  voterName: { type: String, required: false },
   voterLocation: { type: String, required: true },
   voterPoliticalParty: { type: String, required: true },
-  voterAge: { type: Number, required: true },
-  incomeBracket: { type: Number, required: false },
+  voterAge: { type: String, required: true },
+  incomeBracket: { type: String, required: false },
   ip: { type: String, required: true }
 });
 
