@@ -8,7 +8,7 @@ router.route("/").get((req, res) => {
     } else {
       res.json(polls);
     }
-  });
+  }).catch(err => console.log(err));
 });
 
 router.route("/new").post((req, res) => {
@@ -37,7 +37,7 @@ router.route("/:id").get((req, res) => {
         message: "Poll could not be found.",
         error: err
       });
-  });
+  }).catch(err => console.log(err));
 });
 
 router.route("/:id/vote").post(function(req, res) {
@@ -93,7 +93,7 @@ router.route("/:id/vote").post(function(req, res) {
           );
       }
     }
-  });
+  }).catch(err => console.log(err));
 });
 
 module.exports = router;

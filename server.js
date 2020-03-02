@@ -6,7 +6,6 @@ const mongoose = require("mongoose");
 require("dotenv").config();
 const PORT = process.env.PORT;
 const uri = process.env.MONGO_URI;
-const router = require("express").Router();
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -28,10 +27,6 @@ connection.on("error", function(err) {
 });
 
 connection.catch();
-
-router.route("/").get((req, res) => {
-  res.send(console.log("hello"));
-});
 
 const pollsRouter = require("./routes/polls");
 app.use("/polls", pollsRouter);
