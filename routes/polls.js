@@ -43,10 +43,13 @@ router.route("/:id").get((req, res) => {
 router.route("/:id/vote").post(function(req, res) {
   Poll.findById(req.params.id, function(err, poll) {
     let voterInfo = req.body.voterInfo;
+    let choiceText = req.body.choiceText;
+    let ip = voterInfo.ip;
+
     if (!poll) res.status(400).send({ message: err });
     else {
       let votersChoice = poll.pollChoices.find(
-        poll => poll.choiceText === req.body.choiceText
+        poll => poll.choiceText === choiceText
       );
 
       let validation = true;
@@ -78,7 +81,6 @@ router.route("/:id/vote").post(function(req, res) {
 
       if (validation) {
         votersChoice.choiceVotes.push(voterInfo);
-
         poll
           .save()
           .then(poll => {
