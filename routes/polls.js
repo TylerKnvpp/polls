@@ -2,13 +2,13 @@ const router = require("express").Router();
 let Poll = require("../models/poll.model");
 
 router.route("/").get((req, res) => {
-  Poll.find(function(err, polls) {
+  Poll.find(function (err, polls) {
     if (err) {
       console.log(err);
     } else {
       res.json(polls);
     }
-  }).catch(err => console.log(err));
+  }).catch((err) => console.log(err));
 });
 
 router.route("/new").post((req, res) => {
@@ -16,12 +16,12 @@ router.route("/new").post((req, res) => {
 
   poll
     .save()
-    .then(poll => {
+    .then((poll) => {
       res
         .status(200)
         .json({ addedPoll: poll, message: "Task added succesfully." });
     })
-    .catch(err => {
+    .catch((err) => {
       res.status(400).json({ message: "ERROR: Task could not be added." });
     });
 });
@@ -35,13 +35,13 @@ router.route("/:id").get((req, res) => {
     else
       res.status(400).send({
         message: "Poll could not be found.",
-        error: err
+        error: err,
       });
-  }).catch(err => console.log(err));
+  }).catch((err) => console.log(err));
 });
 
-router.route("/:id/vote").post(function(req, res) {
-  Poll.findById(req.params.id, function(err, poll) {
+router.route("/:id/vote").post(function (req, res) {
+  Poll.findById(req.params.id, function (err, poll) {
     let voterInfo = req.body.voterInfo;
     let choiceText = req.body.choiceText;
     let ip = voterInfo.ip;
@@ -49,7 +49,7 @@ router.route("/:id/vote").post(function(req, res) {
     if (!poll) res.status(400).send({ message: err });
     else {
       let votersChoice = poll.pollChoices.find(
-        poll => poll.choiceText === choiceText
+        (poll) => poll.choiceText === choiceText
       );
 
       let validation = true;
@@ -83,19 +83,73 @@ router.route("/:id/vote").post(function(req, res) {
         votersChoice.choiceVotes.push(voterInfo);
         poll
           .save()
-          .then(poll => {
+          .then((poll) => {
             res
               .status(200)
               .json({ message: "Vote added succesfully!", vote: votersChoice });
           })
-          .catch(err =>
+          .catch((err) =>
             res
               .status(400)
               .json({ message: "Vote could not be added.", message: err })
           );
       }
     }
-  }).catch(err => console.log(err));
+  }).catch((err) => console.log(err));
+});
+
+function getTopThree(array) {
+  let duplicatesRemoved = Array.from(new Set(array));
+  let results = {};
+  let total = array.length;
+
+  array.forEach((item) => {
+    if (!results[item]) results[item] = 1;
+    if (results[item]) results[item] += 1;
+  });
+
+  for (let i = 0; i < duplicatesRemoved.length; i++) {
+    if (results[duplicatesRemoved[i]]) {
+      let percentage = (results[duplicatesRemoved[i]] / total) * 100;
+      results[duplicatesRemoved[i]] = percentage.toFixed(2);
+    }
+  }
+
+  return results;
+}
+
+router.route("/:id/results").get(function (req, res) {
+  Poll.findById(req.params.id, function (err, poll) {
+    if (err) res.json(err);
+
+    let pollChoice = poll.pollChoices[0];
+    let votes = pollChoice.choiceVotes;
+    let locations = [];
+    let ages = [];
+    let politicalParties = [];
+    let incomeBracket = [];
+
+    votes.forEach((poll) => {
+      locations.push(poll.voterLocation);
+      ages.push(poll.voterAge);
+      politicalParties.push(poll.voterPoliticalParty);
+      if (poll.incomeBracket) incomeBracket.push(poll.incomeBracket);
+    });
+
+    let topLocations = getTopThree(locations);
+    let topAges = getTopThree(ages);
+    let topPoliticalParties = getTopThree(politicalParties);
+    let topIncomeBrackets = getTopThree(incomeBracket);
+
+    res.json({
+      pollChoice: pollChoice,
+      votes: votes,
+      locations: topLocations,
+      ages: topAges,
+      politicalParties: topPoliticalParties,
+      incomeBracket: topIncomeBrackets,
+    });
+  });
 });
 
 module.exports = router;
