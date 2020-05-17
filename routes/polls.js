@@ -101,53 +101,73 @@ router.route("/:id/vote").post(function (req, res) {
 function getTopThree(array) {
   let duplicatesRemoved = Array.from(new Set(array));
   let results = {};
+  let resultsArray = [];
   let total = array.length;
+  results["total"] = total;
 
-  array.forEach((item) => {
-    if (!results[item]) results[item] = 1;
-    if (results[item]) results[item] += 1;
+  array.forEach((itemObj) => {
+    if (!results[itemObj]) results[itemObj] = 1;
+    if (results[itemObj]) results[itemObj] += 1;
   });
 
   for (let i = 0; i < duplicatesRemoved.length; i++) {
     if (results[duplicatesRemoved[i]]) {
       let percentage = (results[duplicatesRemoved[i]] / total) * 100;
-      results[duplicatesRemoved[i]] = percentage.toFixed(2);
+      if (percentage > 100) percentage / 2;
+
+      let obj = {
+        key: duplicatesRemoved[i],
+        percentage: percentage.toFixed(2),
+        votes: results[duplicatesRemoved[i]],
+      };
+
+      resultsArray.push(obj);
     }
   }
 
-  return results;
+  return resultsArray;
 }
 
 router.route("/:id/results").get(function (req, res) {
   Poll.findById(req.params.id, function (err, poll) {
     if (err) res.json(err);
 
-    let pollChoice = poll.pollChoices[0];
-    let votes = pollChoice.choiceVotes;
-    let locations = [];
-    let ages = [];
-    let politicalParties = [];
-    let incomeBracket = [];
+    let pollChoices = poll.pollChoices;
+    let pollResults = [];
 
-    votes.forEach((poll) => {
-      locations.push(poll.voterLocation);
-      ages.push(poll.voterAge);
-      politicalParties.push(poll.voterPoliticalParty);
-      if (poll.incomeBracket) incomeBracket.push(poll.incomeBracket);
+    pollChoices.forEach((pollObj) => {
+      let votes = pollObj.choiceVotes;
+      let locations = [];
+      let ages = [];
+      let politicalParties = [];
+      let incomeBracket = [];
+
+      votes.forEach((poll) => {
+        locations.push(poll.voterLocation);
+        ages.push(poll.voterAge);
+        politicalParties.push(poll.voterPoliticalParty);
+        if (poll.incomeBracket) incomeBracket.push(poll.incomeBracket);
+      });
+
+      let topLocations = getTopThree(locations);
+      let topAges = getTopThree(ages);
+      let topPoliticalParties = getTopThree(politicalParties);
+      let topIncomeBrackets = getTopThree(incomeBracket);
+
+      let choiceResults = {
+        total: votes.length,
+        choice: pollObj.choiceText,
+        locations: topLocations,
+        ages: topAges,
+        politicalParties: topPoliticalParties,
+        incomeBracket: topIncomeBrackets,
+      };
+
+      pollResults.push(choiceResults);
     });
 
-    let topLocations = getTopThree(locations);
-    let topAges = getTopThree(ages);
-    let topPoliticalParties = getTopThree(politicalParties);
-    let topIncomeBrackets = getTopThree(incomeBracket);
-
     res.json({
-      pollChoice: pollChoice,
-      votes: votes,
-      locations: topLocations,
-      ages: topAges,
-      politicalParties: topPoliticalParties,
-      incomeBracket: topIncomeBrackets,
+      pollResults: pollResults,
     });
   });
 });
